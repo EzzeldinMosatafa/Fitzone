@@ -9,9 +9,21 @@ from django.views.decorators.http import require_http_methods
 import cv2
 import mediapipe as mp
 import numpy as np
-from .models import ProcessedVideo
+from .models import ProcessedVideo, Article, Video
 from .utils import process_video
 from django.core.files import File
+from rest_framework import status, generics
+from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework import permissions
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, BasePermission
+from .serializers import ArticleSerializer, VideoSerializer, ProcessedVideoSerializer
+from django.db.models import Count
+from users.models import CustomUser
+from newsletter.models import Newsletter
+from django.core.cache import cache
+from .view_utils import increment_view_count
+from users.points_system import award_points
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -159,12 +171,18 @@ def process_exercise_video(request, exercise_type):
                 logger.error(f"Error cleaning up input file: {str(cleanup_error)}")
 
 @require_http_methods(["GET"])
-def serve_video(request, video_path):
+def serve_video(request, video_id):
     """Serve video files with proper content type."""
     try:
-        file_path = os.path.join(settings.MEDIA_ROOT, video_path)
+        # Get the video object
+        video = Video.objects.get(id=video_id)
+        if not video.video_file:
+            return HttpResponse('Video file not found', status=404)
+
+        # Get the file path
+        file_path = video.video_file.path
         if not os.path.exists(file_path):
-            return HttpResponse('Video not found', status=404)
+            return HttpResponse('Video file not found', status=404)
 
         # Get the content type based on file extension
         content_type, _ = mimetypes.guess_type(file_path)
@@ -177,6 +195,100 @@ def serve_video(request, video_path):
         response['Accept-Ranges'] = 'bytes'
         return response
 
+    except Video.DoesNotExist:
+        return HttpResponse('Video not found', status=404)
     except Exception as e:
         logger.error(f"Error serving video: {str(e)}")
-        return HttpResponse('Error serving video', status=500) 
+        return HttpResponse('Error serving video', status=500)
+
+class IsAdminOrReadOnly(BasePermission):
+    def has_permission(self, request, view):
+        # Allow read-only access for any request
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        
+        # Allow write access for authenticated admin users
+        return request.user and request.user.is_authenticated and request.user.is_admin
+
+class ArticleListView(generics.ListAPIView):
+    queryset = Article.objects.all()
+    serializer_class = ArticleSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        return context
+
+class ArticleListCreateView(generics.ListCreateAPIView):
+    queryset = Article.objects.all()
+    serializer_class = ArticleSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        return context
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+class ArticleDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Article.objects.all()
+    serializer_class = ArticleSerializer
+    permission_classes = [IsAdminOrReadOnly]
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        return context
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        user_ip = request.META.get('REMOTE_ADDR', 'unknown')
+        cache_key = f"article_viewed_{instance.id}_{user_ip}"
+        
+        if not cache.get(cache_key):
+            instance.views = (instance.views or 0) + 1
+            instance.save(update_fields=["views"])
+            cache.set(cache_key, True, timeout=10)  # 10 seconds timeout
+            
+            # Award points if user is authenticated
+            if request.user.is_authenticated:
+                award_points(request.user, 'article_read')
+        
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+class VideoListCreateView(generics.ListCreateAPIView):
+    queryset = Video.objects.all()
+    serializer_class = VideoSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+    def perform_create(self, serializer):
+        serializer.save(uploader=self.request.user)
+
+class VideoDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Video.objects.all()
+    serializer_class = VideoSerializer
+    permission_classes = [IsAdminOrReadOnly]
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        return context
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        user_ip = request.META.get('REMOTE_ADDR', 'unknown')
+        cache_key = f"video_viewed_{instance.id}_{user_ip}"
+        
+        if not cache.get(cache_key):
+            instance.views = (instance.views or 0) + 1
+            instance.save(update_fields=["views"])
+            cache.set(cache_key, True, timeout=10)  # 10 seconds timeout
+            
+            # Award points if user is authenticated
+            if request.user.is_authenticated:
+                award_points(request.user, 'video_watch')
+        
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+# حذف وظيفة admin_stats 

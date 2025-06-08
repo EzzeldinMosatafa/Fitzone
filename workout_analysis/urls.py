@@ -9,4 +9,8 @@ urlpatterns = [
     path('analyze-running/', views.analyze_running, name='analyze_running'),
     path('analyze-bicepcurl/', views.analyze_bicepcurl, name='analyze_bicepcurl'),
     path('media/<path:video_path>', views.serve_video, name='serve_video'),
+    path('media-videos/<int:video_id>/', views.serve_video, name='serve_video'),
+    path('articles/list/', views.ArticleListView.as_view(), name='article-list'),
+    path('articles/', views.ArticleListCreateView.as_view(), name='article-list-create'),
+    path('articles/<int:pk>/', views.ArticleDetailView.as_view(), name='article-detail'),
 ] 
