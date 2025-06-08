@@ -1,0 +1,40 @@
+[
+{
+  "model": "videos.video",
+  "pk": 14,
+  "fields": {
+    "title": "test video",
+    "description": "test videotest videotest videotest videotest videotest videotest video",
+    "video_file": "videos/The_lunge_exercise_good_for_Knee_and_thigh_injuries.mp4",
+    "image": "videos/thumbnails/DumbbellAlternateBicepCurl_hG4KEJw.png",
+    "duration": 30,
+    "calories": 299,
+    "body_focus": "Upper",
+    "category": "Upper",
+    "difficulty": "Hard",
+    "equipment": [
+      "None"
+    ],
+    "structure": [
+      {
+        "time": "01:05",
+        "duration": "4",
+        "exercise": "upper"
+      }
+    ],
+    "details": {
+      "level": "Intermediate",
+      "calories": "299",
+      "intensity": "High",
+      "targetMuscles": []
+    },
+    "created_at": "2025-05-09T11:34:21.004Z",
+    "updated_at": "2025-06-08T16:57:43.560Z",
+    "views": 7
+  }
+},
+{
+  "model": "videos.video",
+  "pk": 15,
+  "fields": {
+    "title": 

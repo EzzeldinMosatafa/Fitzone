@@ -121,6 +121,33 @@ npm start
 
 **Frontend will run on:** `http://localhost:3000/`
 
+## 🗄️ **Database Setup with Sample Data**
+
+### Quick Start with Pre-loaded Data
+
+The project includes a complete database backup with sample data for immediate testing:
+
+```bash
+# Navigate to database backup directory
+cd database_backups
+
+# Run automated restoration script
+python restore_database.py
+```
+
+**Includes:**
+- ✅ Sample user accounts (admin & regular users)
+- ✅ Pre-loaded workout videos with calorie data
+- ✅ Fitness articles and content
+- ✅ User activity and statistics
+- ✅ Complete workout history
+
+**Sample Accounts:**
+- **Admin:** username: `admin`, password: `admin123`
+- **User:** username: `testuser`, password: `testpass123`
+
+For detailed database setup instructions, see: [`database_backups/README.md`](database_backups/README.md)
+
 ## 📡 **API Endpoints**
 
 ### Authentication
