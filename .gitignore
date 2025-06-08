@@ -46,6 +46,9 @@ yarn-error.log*
 staticfiles/
 static/
 
+# Media Files (Videos, Images - too large for Git)
+media/
+
 # React
 build/
 dist/
