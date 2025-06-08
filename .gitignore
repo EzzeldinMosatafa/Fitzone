@@ -36,11 +36,15 @@ staticfiles/
 .env.test.local
 .env.production.local
 
-# Node.js
+# Node.js (IMPORTANT: This should never be in git!)
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Django Static Files (Auto-generated)
+staticfiles/
+static/
 
 # React
 build/
