@@ -48,6 +48,12 @@ static/
 
 # Media Files (Videos, Images - too large for Git)
 media/
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.wmv
+*.flv
 
 # React
 build/
